@@ -1,16 +1,15 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import 'dotenv/config';
-import grid from 'gridfs-stream';
 import bodyParser from 'body-parser';
 const app = express();
 const uri = process.env.URI;
 const PORT = process.env.PORT || 4000;
-import upload from "./utils/upload.js";
+
 import User from "./models/User.js";
 import cors from 'cors';
 import Conversation from './models/Conversation.js';
-let gfs, gridFsBucket;
+
 mongoose.connect(uri, { useUnifiedTopology: true, useNewUrlParser: true });
 
 mongoose.connection.on('error', (err) => {
@@ -20,11 +19,7 @@ mongoose.connection.on('error', (err) => {
 mongoose.connection.once('open', () => {
     console.log('Connected to the database');
 
-    gridFsBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
-        bucketName: 'fs'
-    });
-    gfs = grid(mongoose.connection.db, mongoose.mongo);
-    gfs.collection('fs');
+
     app.listen(PORT, () => {
         console.log(`Listening on port ${PORT}`);
     });
@@ -126,29 +121,3 @@ app.post("/conversation/add", async (req, res) => {
 })
 
 
-app.post("/upload/file", upload.single("file"), async (req, res) => {
-    try {
-
-        const url = "http://localhost:4000"
-        if (!req.file) {
-            return res.status(404).json("File not found");
-        }
-        const imageUrl = `${url}/file/${req.file.filename}`;
-
-        return res.status(200).json(imageUrl);
-    }
-    catch (err) {
-        return res.status(500).json(err.message);
-    }
-
-});
-
-app.get("/file/:filename", async (req, res) => {
-    try {
-        const file = await gfs.files.findOne({ filename: req.params.filename });
-        const readStream = gridFsBucket.openDownloadStreamByName(req.params.filename);
-        readStream.pipe(res);
-    } catch (err) {
-        return res.status(500).json(err.message);
-    }
-})

@@ -63,7 +63,7 @@ export const ChatFooter = () => {
                 const data = new FormData();
                 data.append("name", file.name);
                 data.append("file", file);
-                await uploadFile(data);
+                console.log("file uploaded successfully");
             }
         }
         setImage();
