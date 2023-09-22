@@ -5,11 +5,12 @@ import { useContext } from 'react';
 import { AccountContext } from '../context/AccountProvider';
 import { createNewUser } from '../requests/api';
 const LoginDialog = () => {
-    const { setAccount } = useContext(AccountContext);
+    const { setAccount, socket } = useContext(AccountContext);
 
     const onLoginSuccess = async (res) => {
         const decoded = jwt_decode(res.credential);
         setAccount(decoded);
+        socket.current.emit('setSocketId', decoded.sub);
         await createNewUser(decoded);
     }
 

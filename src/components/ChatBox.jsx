@@ -26,6 +26,11 @@ const ChatBox = () => {
 
 export const ChatHeader = () => {
     const currentChatContext = useContext(CurrentChatContext);
+    const accountContext = useContext(AccountContext);
+    let status = "Offline";
+    if (accountContext.activeUsers.includes(currentChatContext.sub, 0)) {
+        status = "Online";
+    }
     if (!currentChatContext.current_chat) {
         return <div>Loading...</div>;
     }
@@ -35,7 +40,7 @@ export const ChatHeader = () => {
             <img className="rounded-full h-8 w-8 m-2 object-cover" src={profile_image} alt={`${name}'s profile`}></img>
             <div className="flex flex-col ml-2">
                 <h4>{name}</h4>
-                <p className="text-xs text-gray-600">Online</p>
+                <p className="text-xs text-gray-600">{status}</p>
             </div>
             <div className="flex flex-row ml-auto mr-3">
                 <svg className="w-6 h-6 mx-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#FFFFFF"><path d="M11 6C13.7614 6 16 8.23858 16 11M16.6588 16.6549L21 21M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg>
@@ -87,6 +92,7 @@ export const ChatFooter = () => {
                 onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                         console.log('Enter key pressed');
+                        accountContext.socket.current.emit('send-message', message, currentChatContext.current_chat.sub);
                         sendMessage(accountContext.account.sub, currentChatContext.current_chat.sub, message);
                         setMessage("");
                     } else {
@@ -103,7 +109,8 @@ export const ChatFooter = () => {
 export const Messages = () => {
     const currentChatContext = useContext(CurrentChatContext);
     const accountContext = useContext(AccountContext);
-    const [data, setData] = useState(null);
+    const [incomingMessage, setIncomingMessage] = useState(null);
+    const [data, setData] = useState([]);
     useEffect(() => {
         const getData = async () => {
             if (!accountContext.account || !currentChatContext.current_chat) {
@@ -115,13 +122,24 @@ export const Messages = () => {
             if (res !== null) {
                 setData(res);
             }
+            else {
+                setData([]);
+            }
         }
         getData();
-    }, [currentChatContext, accountContext.account]);
+    }, [currentChatContext.current_chat, accountContext.account]);
+    useEffect(() => {
+        accountContext.socket.current.on('receive-message', (message) => {
+            setIncomingMessage(message);
+        });
+    }, [currentChatContext.current_chat])
+    useEffect(() => {
+        setData(data.push(incomingMessage));
+    }, [incomingMessage]);
     return (
-        <div className="w-full h-full bg-white">
-            <div className="flex flex-col justify-end mx-5 my-4">
-                {data !== null ? data.map((message) => {
+        <div className="w-full h-full bg-white overflow-auto">
+            <div className="flex flex-col justify-end mx-5 my-4 overflow-y-auto">
+                {data.length > 0 ? data.map((message) => {
                     if (message.sender === accountContext.account.sub) {
                         return (
                             <MessageCard text={message.message} flag={0} key={message._id} />

@@ -5,25 +5,49 @@ import bodyParser from 'body-parser';
 const app = express();
 const uri = process.env.URI;
 const PORT = process.env.PORT || 4000;
-
+import http from 'http';
 import User from "./models/User.js";
 import cors from 'cors';
 import Conversation from './models/Conversation.js';
+import { Server } from 'socket.io';
 
-mongoose.connect(uri, { useUnifiedTopology: true, useNewUrlParser: true });
+const server = http.createServer(app);
+const io = new Server(server);
 
-mongoose.connection.on('error', (err) => {
-    console.error('MongoDB connection error:', err);
-});
+let users = [];
 
-mongoose.connection.once('open', () => {
+// const addUser = (userData, socketId) => {
+//     !users.some(user => user.sub == userData.sub) && users.push({ ...userData, socketId });
+// }
+
+io.on('connection', (socket) => {
+    console.log("Connected to the client");
+
+    // socket.on("addUsers", userData => {
+    //     addUser(userData, socket.id);
+    //     io.emit("getUsers", users);
+    // });
+
+    socket.on('setSocketId', (sub) => {
+        socket.id = sub;
+    });
+
+    socket.on('send-message', (message, receiverId) => {
+        const object = { members: [socket.id, receiverId], message: message, sender: socket.id };
+        io.to(receiverId).emit("receive-message", object);
+    });
+
+
+})
+mongoose.connect(uri, { useUnifiedTopology: true, useNewUrlParser: true }).then(() => {
     console.log('Connected to the database');
-
-
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
         console.log(`Listening on port ${PORT}`);
     });
-});
+
+}).catch((err) => {
+    console.log("Unable to connect to the database");
+})
 
 app.use(cors({
     origin: true,
@@ -55,7 +79,6 @@ app.get("/users", async (req, res) => {
 
     try {
         const data = await User.find({ email_verified: true });
-        console.log(data);
         return res.status(200).json(data);
     } catch (err) {
         console.error(err); // Log the error for debugging purposes
