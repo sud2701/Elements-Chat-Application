@@ -33,7 +33,8 @@ io.on('connection', (socket) => {
     });
 
     socket.on('send-message', (message, receiverId) => {
-        const object = { members: [socket.id, receiverId], message: message, sender: socket.id };
+        const object = { members: [socket.id, receiverId], message: { message }, sender: socket.id };
+        console.log(object);
         io.to(receiverId).emit("receive-message", object);
     });
 

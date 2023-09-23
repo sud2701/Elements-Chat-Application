@@ -7,7 +7,7 @@ import Users from './Users';
 import { useContext } from 'react';
 import { AccountContext } from '../context/AccountProvider';
 const ChatDialog = () => {
-    const { account, socket, setActiveUsers } = useContext(AccountContext);
+    const { account } = useContext(AccountContext);
     const [users, setUsers] = useState([]);
 
     useEffect(() => {

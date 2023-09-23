@@ -56,7 +56,7 @@ const sendMessage = async (senderId, receiverId, message) => {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ senderId, receiverId, message })
+            body: JSON.stringify({ senderId, receiverId, message: { message: message } })
         })
         if (res.ok) {
             console.log("Message sent successfully");
