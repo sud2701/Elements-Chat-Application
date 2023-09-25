@@ -6,7 +6,6 @@ import ChatFooter from './ChatFooter'
 import ChatHeader from './ChatHeader'
 import Messages from './Messages'
 import EmptyChat from './EmptyChat'
-import ReplyProvider from "../context/ReplyProvider";
 const ChatBox = () => {
     const currentChatContext = useContext(CurrentChatContext);
     if (!currentChatContext.current_chat) {
@@ -18,11 +17,10 @@ const ChatBox = () => {
         return (
 
             <div className="relative flex flex-col h-screen col-span-3">
-                <ReplyProvider>
-                    <ChatHeader />
-                    <Messages />
-                    <ChatFooter />
-                </ReplyProvider>
+
+                <ChatHeader />
+                <Messages />
+                <ChatFooter />
             </div>
         )
     }

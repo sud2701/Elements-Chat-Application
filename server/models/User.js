@@ -30,6 +30,10 @@ const userSchema = new schema({
     email: {
         type: String,
         required: true
+    },
+    socketID: {
+        type: String,
+        required: true
     }
 })
 

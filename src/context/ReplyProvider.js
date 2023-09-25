@@ -3,7 +3,7 @@ import { useState } from "react";
 export const ReplyContext = createContext(null);
 
 const ReplyProvider = ({ children }) => {
-    const [reply_to, setReplyTo] = useState();
+    const [reply_to, setReplyTo] = useState(null);
     return (
         <ReplyContext.Provider
             value={{

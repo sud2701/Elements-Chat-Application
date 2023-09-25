@@ -18,6 +18,24 @@ const createNewUser = async (data) => {
     }
 }
 
+const getParticularUser = async (sub) => {
+    const uri = `http://localhost:4000/users/${sub}`;
+
+    try {
+        const res = await fetch(uri);
+        const user = await res.json();
+        if (res.ok) {
+            return user;
+        }
+        else {
+            return null;
+        }
+    } catch (err) {
+        console.log("Unable to fetch user data");
+        return null;
+    }
+}
+
 const getUsers = async () => {
     const uri = "http://localhost:4000/users";
     try {
@@ -69,6 +87,27 @@ const sendMessage = async (senderId, receiverId, message) => {
     }
 }
 
+const sendReply = async (senderId, receiverId, message, reply_to) => {
+    const uri = "http://localhost:4000/conversation/add";
+    try {
+        const res = await fetch(uri, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ senderId, receiverId, message: { message: message, reply_to: reply_to } })
+        })
+        if (res.ok) {
+            console.log("Message sent successfully");
+        }
+        else {
+            console.log("Message failed");
+        }
+    } catch (err) {
+        console.log(err);
+    }
+}
+
 const uploadFile = async (data) => {
     const url = "http://localhost:4000/upload/file";
 
@@ -88,4 +127,4 @@ const uploadFile = async (data) => {
     }
 }
 
-export { createNewUser, getUsers, getMessages, sendMessage, uploadFile };
+export { createNewUser, getUsers, getMessages, sendMessage, uploadFile, getParticularUser, sendReply };

@@ -5,17 +5,30 @@ import { useContext } from 'react';
 import { AccountContext } from '../context/AccountProvider';
 import { createNewUser } from '../requests/api';
 import { useSpring, animated } from 'react-spring';
+import { v4 as uuid } from 'uuid';
+import { getParticularUser } from '../requests/api';
 
 const LoginDialog = () => {
-    const { setAccount, socket } = useContext(AccountContext);
+    const { account, setAccount, socket } = useContext(AccountContext);
     const [animatedProps, set] = useSpring(() => ({ opacity: 1, transform: 'translateY(0)' }));
     const [isButtonVisible, setButtonVisibility] = useState(true);
 
     const onLoginSuccess = async (res) => {
+
         const decoded = jwt_decode(res.credential);
-        setAccount(decoded);
-        socket.current.emit('setSocketId', decoded.sub);
-        await createNewUser(decoded);
+        const userData = await getParticularUser(decoded.sub);
+        if (userData === null) {
+            const socketID = uuid();
+            decoded.socketID = socketID;
+            await createNewUser(decoded);
+            setAccount(decoded);
+        }
+        else {
+            setAccount(userData);
+        }
+
+
+
     }
 
     const onLoginError = (res) => {

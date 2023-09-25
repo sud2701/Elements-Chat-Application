@@ -1,14 +1,9 @@
 import React from 'react'
 import { useContext } from 'react'
-import { AccountContext } from '../context/AccountProvider'
 import { CurrentChatContext } from '../context/CurrentChatContext'
 const ChatHeader = () => {
     const currentChatContext = useContext(CurrentChatContext);
-    const accountContext = useContext(AccountContext);
     let status = "Offline";
-    if (accountContext.activeUsers.includes(currentChatContext.sub, 0)) {
-        status = "Online";
-    }
     if (!currentChatContext.current_chat) {
         return <div>Loading...</div>;
     }

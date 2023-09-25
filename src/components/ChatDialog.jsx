@@ -19,7 +19,7 @@ const ChatDialog = () => {
                 console.error('Error fetching users:', error);
             }
         }
-        fetchData(); // Call the fetchData function
+        fetchData();
     }, []);
 
     useEffect(() => {

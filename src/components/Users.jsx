@@ -8,7 +8,7 @@ const Users = ({ users }) => {
     return (
         <div>
             <div className="flex flex-col h-full">
-                {users.filter((user) => user.sub !== accountContext.account.sub).map((user) => (
+                {users.filter((user) => { return user.sub !== accountContext.account.sub; }).map((user) => (
                     <div key={user.sub} className="flex flex-row items-center justify-center w-fit m-4 h-10 cursor-pointer" onClick={() => {
                         currentChatContext.setCurrentChat(user);
                     }}>

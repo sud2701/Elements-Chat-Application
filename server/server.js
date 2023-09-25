@@ -14,29 +14,27 @@ import { Server } from 'socket.io';
 const server = http.createServer(app);
 const io = new Server(server);
 
-let users = [];
-
-// const addUser = (userData, socketId) => {
-//     !users.some(user => user.sub == userData.sub) && users.push({ ...userData, socketId });
-// }
-
+const customIdToSocketMap = new Map();
 io.on('connection', (socket) => {
+    const id = socket.handshake.query.id;
+    socket.join(id);
     console.log("Connected to the client");
 
-    // socket.on("addUsers", userData => {
-    //     addUser(userData, socket.id);
-    //     io.emit("getUsers", users);
-    // });
 
-    socket.on('setSocketId', (sub) => {
-        socket.id = sub;
-    });
 
     socket.on('send-message', (message, receiverId) => {
-        const object = { members: [socket.id, receiverId], message: { message }, sender: socket.id };
-        console.log(object);
-        io.to(receiverId).emit("receive-message", object);
+
+        const object = { members: [id, receiverId], message: { message }, sender: id };
+
+        socket.broadcast.to(receiverId).emit("receive-message", object);
+        socket.emit("receive-message", object);
     });
+
+    socket.on('send-reply', (message, reply_to, receiverId) => {
+        const object = { members: [id, receiverId], message: { message, reply_to: reply_to }, sender: id };
+        socket.broadcast.to(receiverId).emit("receive-message", object);
+        socket.emit("receive-message", object);
+    })
 
 
 })
@@ -60,7 +58,7 @@ app.use(express.static('public'));
 
 app.post("/new-user", async (req, res) => {
     const account = req.body;
-    const user = { name: account.name, given_name: account.given_name, family_name: account.family_name, profile_image: account.picture, email_verified: account.email_verified, sub: account.sub, email: account.email };
+    const user = { name: account.name, given_name: account.given_name, family_name: account.family_name, profile_image: account.picture, email_verified: account.email_verified, sub: account.sub, email: account.email, socketID: account.socketID };
     try {
         let user_exists = await User.findOne({ sub: account.sub });
         if (user_exists) {
@@ -89,6 +87,21 @@ app.get("/users", async (req, res) => {
 
 });
 
+app.get("/users/:id", async (req, res) => {
+    const id = req.params.id;
+    try {
+        const user = await User.findOne({ sub: id });
+        if (user) {
+            return res.status(200).json(user);
+        }
+        else {
+            return res.status(500).json("User doesn't exist");
+        }
+    } catch (err) {
+        return res.status(500).json("Unable to fetch error");
+    }
+})
+
 app.post("/conversation/create", async (req, res) => {
     const { senderId, receiverId } = req.body;
     try {
@@ -110,16 +123,32 @@ app.get("/conversation", async (req, res) => {
     const senderId = req.query.senderId;
     const receiverId = req.query.receiverId;
     try {
-        const conversations = await Conversation.find({ members: { $all: [senderId, receiverId] } }).sort({ createdAt: 'asc' });
+        // Find conversations between sender and receiver
+        let conversations = await Conversation.find({
+            members: { $all: [senderId, receiverId] }
+        }).sort({ createdAt: 'asc' });
+
+        // Use Promise.all to fetch reply messages
+        for (let conv of conversations) {
+            if (conv.message.reply_to) {
+                let reply_msg = await Conversation.findById(conv.message.reply_to);
+                conv.message.reply_to = reply_msg;
+            }
+        }
+
+        conversations = await Promise.all(conversations);
+        console.log(conversations);
         if (conversations.length > 0) {
             res.status(200).json(conversations);
         } else {
             res.status(202).json("No messages to show");
         }
     } catch (err) {
-        res.status(400).json("Unable to fetch any messages from this conversation");
+        console.error(err); // Log the error for debugging
+        res.status(500).json("Internal server error");
     }
 });
+
 
 app.get("/conversations", async (req, res) => {
     try {
@@ -143,5 +172,7 @@ app.post("/conversation/add", async (req, res) => {
         return res.status(400).json("Unable to send message");
     }
 })
+
+
 
 
